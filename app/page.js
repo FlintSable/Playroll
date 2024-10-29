@@ -1,12 +1,15 @@
+"use client";
+
 import Image from "next/image";
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
-
 export default function Home() {
+  const router = useRouter();
+
   return (
     <div className="flex items-center justify-center h-screen">
-      <Button onClic={() => router.push('/dashboard')}>Start Rolling</Button>
+      <Button onClick={() => router.push('/dashboard')}>Start Rolling</Button>
     </div>
   );
 }

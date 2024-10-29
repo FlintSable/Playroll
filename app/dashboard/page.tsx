@@ -1,4 +1,5 @@
-import Component from '@/components/DashboardContent';
+"use client";
+import DashboardContent from '../components/DashboardContent';
 
 export default function Dashboard(){
   return(
