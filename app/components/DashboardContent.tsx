@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Video, FileText, Book, Headphones, Tool, ChevronDown, ChevronUp, ExternalLink, Edit, Folder} from "lucide-react";
+import { Video, FileText, Book, Headphones, Wrench, Image, ChevronDown, ChevronUp, ExternalLink, Edit, Folder} from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import { progress } from "@/components/ui/progress";
+import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -32,8 +33,8 @@ const iconMap: Record<ContentType, React.ReactNode> = {
   blog: <FileText className="h-4 w-4" />,
   paper: <FileText className="h-4 w-4" />,
   book: <Book className="h-4 w-4" />,
-  podcast: <HeadPhones className="h-4 w-4" />,
-  tool: <Tool className="h-4 w-4" />,
+  podcast: <Headphones className="h-4 w-4" />,
+  tool: <Wrench className="h-4 w-4" />,
   image: <Image className="h-4 w-4" />,
 };
 
