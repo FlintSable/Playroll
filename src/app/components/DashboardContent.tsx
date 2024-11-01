@@ -249,12 +249,12 @@ export default function DashboardContent() {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Collections Pane */}
+      {/* Rolls Pane */}
       <div className="w-[250px] flex-shrink-0">
         <SidebarProvider>
           <Sidebar className="border-r">
             <SidebarHeader>
-              <h2 className="text-lg font-semibold px-4 py-2">Collections</h2>
+              <h2 className="text-lg font-semibold px-4 py-2">Rolls</h2>
             </SidebarHeader>
             <SidebarContent>
               <SidebarMenu>
@@ -333,9 +333,9 @@ export default function DashboardContent() {
       <div className="flex-1 overflow-auto">
         {isFirstRun ? (
           <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Welcome to Content Aggregator!</h1>
-            <p className="mb-4">Get started by creating your first collection or exploring the sample collections.</p>
-            <Button onClick={() => setIsAddingCollection(true)}>Create Your First Collection</Button>
+            <h1 className="text-2xl font-bold mb-4">Welcome to PlayRoll!</h1>
+            <p className="mb-4">Get started by creating your first roll or exploring the sample rolls.</p>
+            <Button onClick={() => setIsAddingCollection(true)}>Create Your First Roll</Button>
           </div>
         ) : selectedCollection ? (
           <div className="p-6">
