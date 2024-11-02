@@ -143,17 +143,17 @@ export default function DashboardContent() {
     }
   }, [collections])
 
-  // n: Function to reset to initial state (useful for testing)
+  //n: Function to reset to initial state (useful for testing)
   const resetToInitialState = () => {
     localStorage.removeItem('collections');
     setCollections([]);
     setSelectedCollection(null);
     setIsFirstRun(true);
-    setActiveFilters([]); // Reset filters too
-    setExpandedItems([]); // Reset expanded items
+    setActiveFilters([]); //n: Reset filters too
+    setExpandedItems([]); //n: Reset expanded items
   };
 
-  // n: Function to load mock data (useful for testing)
+  //n: Function to load mock data (useful for testing)
   const loadMockData = () => {
     setCollections(mockCollections)
     setSelectedCollection(mockCollections[0])
@@ -192,6 +192,39 @@ export default function DashboardContent() {
     }
   }
 
+  const handleAddItem = () => {
+    if(newItem.title && newItem.type && newItem.url && selectedCollection){
+      const item: ContentItem = {
+        id: Date.now().toString(),
+        title: newItem.title,
+        type: newItem.type as ContentType,
+        url: newItem.url,
+        description: newItem.description || "",
+        progress: newItem.progress || 0,
+        notes: newItem.notes || ""
+      }
+
+      //n: ternary operator
+      setCollections(prev => {
+        const newCollections = prev.map(collection =>
+          collection.id === selectedCollection.id
+            ? {...collection, items: [...collection.items, item]}
+            : collection
+        );
+
+        const updatedSelectedCollection = newCollections.find(
+          c => c.id === selectedCollection.id
+        );
+        if(updatedSelectedCollection){
+          setSelectedCollection(updatedSelectedCollection);
+        }
+        return newCollections;
+      });
+      setNewItem({})
+      setIsAddingItem(false)
+    }
+  }
+
   const handleEditItem = (item: ContentItem) => {
     setEditingItem(item)
   }
@@ -213,7 +246,7 @@ export default function DashboardContent() {
     console.log("Share")
   }
 
-  // n: Add a test controls section that only appears in development
+  //n: Add a test controls section that only appears in development
   const TestControls = () => {
     if (process.env.NODE_ENV !== 'development') return null;
     
@@ -425,10 +458,86 @@ export default function DashboardContent() {
                   </CollapsibleContent>
                 </Collapsible>
               ))}
+
+              {/* Add Item Button */}
+              <Button
+                variant="outline"
+                className="h-[100px] boarder-dashed"
+                onClick={() => setIsAddingItem(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Resource
+              </Button>
             </div>
           </div>
-        ) : null}
+        ) : (
+          <div className="p-6">
+            <h1 className="text-2x1 font-bold mb-4">No Roll Selected</h1>
+            <p>Please select a roll from the sidebar or create a new one.</p>
+          </div>
+        )}
       </div>
+
+
+      {/* Add Roll Item Dialog */}
+      <Dialog open={isAddingItem} onOpenChange={setIsAddingItem}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Resource</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 item-center gap-4">
+              <Label htmlFor="new-title" className="text-right">Title</Label>
+              <Input
+                id="new-title"
+                value={newItem.title || ""}
+                onChange={(e) => setNewItem({...newItem, title: e.target.value})}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="new-type" className="text-right">Type</Label>
+              <Select
+                value={newItem.type}
+                onValueChange={(value: ContentType) => setNewItem({...newItem, type: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.keys(iconMap).map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="new-url" className="text-right">URL</Label>
+              <Input
+                id="new-url"
+                value={newItem.url || ""}
+                onChange={(e) => setNewItem({...newItem, url: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="new-description" className="text-right">Description</Label>
+              <Textarea
+                id="new-description"
+                value={newItem.description || ""}
+                onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleAddItem}>Add Resource</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
 
       {/* Test Controls */}
