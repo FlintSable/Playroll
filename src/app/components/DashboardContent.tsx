@@ -23,7 +23,8 @@ import {
  } from "@/components/ui/sidebar";
 
 
-type ContentType = "video" | "blog" | "paper" | "book" | "podcast" | "tool" | "image";
+// n: 1 of 2 - add new media type here
+type ContentType = "video" | "blog" | "paper" | "book" | "podcast" | "tool" | "image" | "docs";
 
 type ContentItem ={
   id: string;
@@ -42,6 +43,7 @@ type Collection = {
   items: ContentItem[];
 };
 
+//n: 2 of 2 - add new media type here
 const iconMap: Record<ContentType, React.ReactNode> = {
   video: <Video className="h-4 w-4" />,
   blog: <FileText className="h-4 w-4" />,
@@ -50,6 +52,9 @@ const iconMap: Record<ContentType, React.ReactNode> = {
   podcast: <Headphones className="h-4 w-4" />,
   tool: <Wrench className="h-4 w-4" />,
   image: <Image className="h-4 w-4" />,
+  docs: <FileText className="h-4 w-4" />,
+
+
 };
 
 const mockCollections: Collection[] = [
@@ -79,28 +84,70 @@ const mockCollections: Collection[] = [
   },
   {
     id: "2",
-    name: "Machine Learning",
+    name: "Game Development",
     items: [
       {
-        id: "3",
-        title: "Machine Learning Basics",
-        type: "book",
-        url: "https://example.com/ml-basics",
-        description: "Introduction to machine learning concepts",
-        progress: 30,
-        notes: "Currently on chapter 3: Neural Networks",
+        id: "7",
+        title: "Unity Engine Masterclass",
+        type: "video",
+        url: "https://example.com/unity-masterclass",
+        description: "Complete guide to game development with Unity",
+        progress: 40,
+        notes: "Learning about physics systems and particle effects"
       },
       {
-        id: "4",
-        title: "Data Science Podcast",
-        type: "podcast",
-        url: "https://example.com/data-science-podcast",
-        description: "Weekly discussions on data science topics",
-        progress: 100,
-        notes: "Great episode on feature engineering",
+        id: "8",
+        title: "Game Design Patterns",
+        type: "book",
+        url: "https://example.com/game-patterns",
+        description: "Essential patterns for game architecture and design",
+        progress: 65,
+        notes: "Great examples of component systems"
       },
+      {
+        id: "9",
+        title: "Game Dev Tools Overview",
+        type: "blog",
+        url: "https://example.com/gamedev-tools",
+        description: "Comprehensive comparison of popular game development tools",
+        progress: 100,
+        notes: "Helped choose tech stack for current project"
+      }
     ],
   },
+  {
+    id: "4",
+    name: "Cybersecurity",
+    items: [
+      {
+        id: "13",
+        title: "Ethical Hacking Course",
+        type: "video",
+        url: "https://example.com/ethical-hacking",
+        description: "Comprehensive guide to penetration testing",
+        progress: 55,
+        notes: "Learning about network security protocols"
+      },
+      {
+        id: "14",
+        title: "Security Tools Guide",
+        type: "blog",
+        url: "https://example.com/security-tools",
+        description: "Overview of essential security testing tools",
+        progress: 95,
+        notes: "Implemented several tools in current project"
+      },
+      {
+        id: "15",
+        title: "Cyber Security Weekly",
+        type: "podcast",
+        url: "https://example.com/security-weekly",
+        description: "Weekly updates on security threats and solutions",
+        progress: 80,
+        notes: "Great coverage of recent vulnerabilities"
+      }
+    ],
+  }
 ];
 
 export default function DashboardContent() {
@@ -143,17 +190,17 @@ export default function DashboardContent() {
     }
   }, [collections])
 
-  // n: Function to reset to initial state (useful for testing)
+  //n: Function to reset to initial state (useful for testing)
   const resetToInitialState = () => {
     localStorage.removeItem('collections');
     setCollections([]);
     setSelectedCollection(null);
     setIsFirstRun(true);
-    setActiveFilters([]); // Reset filters too
-    setExpandedItems([]); // Reset expanded items
+    setActiveFilters([]); //n: Reset filters too
+    setExpandedItems([]); //n: Reset expanded items
   };
 
-  // n: Function to load mock data (useful for testing)
+  //n: Function to load mock data (useful for testing)
   const loadMockData = () => {
     setCollections(mockCollections)
     setSelectedCollection(mockCollections[0])
@@ -192,9 +239,71 @@ export default function DashboardContent() {
     }
   }
 
+  const handleAddItem = () => {
+    if(newItem.title && newItem.type && newItem.url && selectedCollection){
+      const item: ContentItem = {
+        id: Date.now().toString(),
+        title: newItem.title,
+        type: newItem.type as ContentType,
+        url: newItem.url,
+        description: newItem.description || "",
+        progress: newItem.progress || 0,
+        notes: newItem.notes || ""
+      }
+
+      //n: ternary operator
+      setCollections(prev => {
+        const newCollections = prev.map(collection =>
+          collection.id === selectedCollection.id
+            ? {...collection, items: [...collection.items, item]}
+            : collection
+        );
+
+        const updatedSelectedCollection = newCollections.find(
+          c => c.id === selectedCollection.id
+        );
+        if(updatedSelectedCollection){
+          setSelectedCollection(updatedSelectedCollection);
+        }
+        return newCollections;
+      });
+      setNewItem({})
+      setIsAddingItem(false)
+    }
+  }
+
   const handleEditItem = (item: ContentItem) => {
     setEditingItem(item)
   }
+
+  const handleUpdateItem = (updatedItem: ContentItem) => {
+    if (selectedCollection) {
+      setCollections(prev => {
+        const newCollections = prev.map(collection =>
+          collection.id === selectedCollection.id
+            ? {
+                ...collection,
+                items: collection.items.map(item =>
+                  item.id === updatedItem.id ? updatedItem : item
+                )
+              }
+            : collection
+        );
+        
+        // Find and update the selected collection
+        const updatedSelectedCollection = newCollections.find(
+          c => c.id === selectedCollection.id
+        );
+        if (updatedSelectedCollection) {
+          setSelectedCollection(updatedSelectedCollection);
+        }
+        
+        return newCollections;
+      });
+      
+      setEditingItem(null);
+    }
+  };
 
   const toggleFilter = (type: ContentType) => {
     setActiveFilters((prev) =>
@@ -213,7 +322,7 @@ export default function DashboardContent() {
     console.log("Share")
   }
 
-  // n: Add a test controls section that only appears in development
+  //n: Add a test controls section that only appears in development
   const TestControls = () => {
     if (process.env.NODE_ENV !== 'development') return null;
     
@@ -318,7 +427,7 @@ export default function DashboardContent() {
                   ) : (
                     <SidebarMenuButton onClick={() => setIsAddingCollection(true)}>
                       <Plus className="mr-2 h-4 w-4" />
-                      Add Collection
+                      Add Roll
                     </SidebarMenuButton>
                   )}
                 </SidebarMenuItem>
@@ -342,10 +451,10 @@ export default function DashboardContent() {
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold">{selectedCollection.name}</h1>
               <div className="flex space-x-2">
-                <Button variant="outline" onClick={handleShare}>
+                {/* <Button variant="outline" onClick={handleShare}>
                   <Share2 className="mr-2 h-4 w-4" />
                   Share
-                </Button>
+                </Button> */}
                 <Select value={columnLayout} onValueChange={(value: "single" | "double" | "triple") => setColumnLayout(value)}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Select column layout" />
@@ -425,10 +534,149 @@ export default function DashboardContent() {
                   </CollapsibleContent>
                 </Collapsible>
               ))}
+
+              {/* Add Item Button */}
+              <Button
+                variant="outline"
+                className="h-[100px] boarder-dashed"
+                onClick={() => setIsAddingItem(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Resource
+              </Button>
             </div>
           </div>
-        ) : null}
+        ) : (
+          <div className="p-6">
+            <h1 className="text-2x1 font-bold mb-4">No Roll Selected</h1>
+            <p>Please select a roll from the sidebar or create a new one.</p>
+          </div>
+        )}
       </div>
+
+      {/* Edit Item Dialog */}
+      <Dialog open={!!editingItem} onOpenChange={() => setEditingItem(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Resource</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="title" className="text-right">Title</Label>
+              <Input
+                id="title"
+                value={editingItem?.title}
+                onChange={(e) => setEditingItem(prev => prev ? { ...prev, title: e.target.value } : null)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="url" className="text-right">URL</Label>
+              <Input
+                id="url"
+                value={editingItem?.url}
+                onChange={(e) => setEditingItem(prev => prev ? { ...prev, url: e.target.value } : null)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">Description</Label>
+              <Textarea
+                id="description"
+                value={editingItem?.description}
+                onChange={(e) => setEditingItem(prev => prev ? { ...prev, description: e.target.value } : null)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="progress" className="text-right">Progress</Label>
+              <Input
+                id="progress"
+                type="number"
+                min="0"
+                max="100"
+                value={editingItem?.progress}
+                onChange={(e) => setEditingItem(prev => prev ? { ...prev, progress: parseInt(e.target.value) } : null)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="notes" className="text-right">Notes</Label>
+              <Textarea
+                id="notes"
+                value={editingItem?.notes}
+                onChange={(e) => setEditingItem(prev => prev ? { ...prev, notes: e.target.value } : null)}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => editingItem && handleUpdateItem(editingItem)}>
+              Save changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Roll Item Dialog */}
+      <Dialog open={isAddingItem} onOpenChange={setIsAddingItem}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Resource</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 item-center gap-4">
+              <Label htmlFor="new-title" className="text-right">Title</Label>
+              <Input
+                id="new-title"
+                value={newItem.title || ""}
+                onChange={(e) => setNewItem({...newItem, title: e.target.value})}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="new-type" className="text-right">Type</Label>
+              <Select
+                value={newItem.type}
+                onValueChange={(value: ContentType) => setNewItem({...newItem, type: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.keys(iconMap).map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="new-url" className="text-right">URL</Label>
+              <Input
+                id="new-url"
+                value={newItem.url || ""}
+                onChange={(e) => setNewItem({...newItem, url: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="new-description" className="text-right">Description</Label>
+              <Textarea
+                id="new-description"
+                value={newItem.description || ""}
+                onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleAddItem}>Add Resource</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
 
       {/* Test Controls */}
