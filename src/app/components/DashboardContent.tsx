@@ -62,6 +62,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import BookmarkControls from "@/app/components/BookmarkControls";
+
 // n: 1 of 2 - add new media type here
 type ContentType =
   | "video"
@@ -386,7 +388,7 @@ export default function DashboardContent() {
     if (!selectedCollection?.items.length) return;
 
     try {
-      // First update the UI to show loading state if needed
+      // n: First update the UI to show loading state if needed
       console.log(`Sorting by ${sortType} in ${sortOrder} order`);
 
       const response = await fetch("/api/sort", {
@@ -412,7 +414,7 @@ export default function DashboardContent() {
         throw new Error("Invalid response format from sorting service");
       }
 
-      // Update both collections and selectedCollection atomically
+      // n: Update both collections and selectedCollection atomically
       setCollections((prev) => {
         const newCollections = prev.map((collection) =>
           collection.id === selectedCollection.id
@@ -420,7 +422,7 @@ export default function DashboardContent() {
             : collection,
         );
 
-        // Update selected collection
+        // n: Update selected collection
         const updatedCollection = newCollections.find(
           (c) => c.id === selectedCollection.id,
         );
@@ -432,8 +434,32 @@ export default function DashboardContent() {
       });
     } catch (error) {
       console.error("Sorting failed:", error);
-      // Optionally add error handling UI here
+      // n: Optionally add error handling UI here
     }
+  };
+
+  const handleBookmarkImport = (importedData) => {
+    setCollections((prev) => {
+      const mergedCollections = [...prev];
+      importedData.forEach((importedCollection) => {
+        const existingIndex = mergedCollections.findIndex(
+          (c) => c.name === importedCollection.name,
+        );
+        if (existingIndex >= 0) {
+          // n. Merge items, avoiding duplicates
+          const existingUrls = new Set(
+            mergedCollections[existingIndex].items.map((item) => item.url),
+          );
+          const newItems = importedCollection.items.filter(
+            (item) => !existingUrls.has(item.url),
+          );
+          mergedCollections[existingIndex].items.push(...newItems);
+        } else {
+          mergedCollections.push(importedCollection);
+        }
+      });
+      return mergedCollections;
+    });
   };
 
   //n: Add a test controls section that only appears in development
@@ -584,6 +610,10 @@ export default function DashboardContent() {
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold">{selectedCollection.name}</h1>
               <div className="flex space-x-2">
+                <BookmarkControls
+                  selectedCollection={selectedCollection}
+                  onImportComplete={handleBookmarkImport}
+                />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm">
