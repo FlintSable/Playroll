@@ -34,12 +34,12 @@ const BookmarkControls = ({ selectedCollection, onImportComplete }) => {
           body: JSON.stringify({ collections: [selectedCollection] }), // Send array with just selected collection
         },
       );
-      // Add these lines after the fetch
+      // n. handles the export
       if (!response.ok) {
         throw new Error("Failed to export bookmarks");
       }
 
-      // Convert response to blob and trigger download
+      // n. Convert response to blob and trigger download
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
