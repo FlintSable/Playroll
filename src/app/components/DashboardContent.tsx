@@ -217,7 +217,16 @@ export default function DashboardContent() {
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [newItem, setNewItem] = useState<Partial<ContentItem>>({});
   const [isFirstRun, setIsFirstRun] = useState(true);
-
+  const [urlSuggestions, setUrlSuggestions] = useState({
+    title: "",
+    type: "",
+    description: "",
+  });
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [urlStatus, setUrlStatus] = useState({
+    isValid: true,
+    message: "",
+  });
   // n: 1. tries to load saved collections from localStorage
   // n: default collection selection, runs whenever collections or selectedCollections changes
   //  * 2. if there are no collections use the mock data
@@ -460,6 +469,63 @@ export default function DashboardContent() {
       });
       return mergedCollections;
     });
+  };
+  const handleUrlInput = async (url: string) => {
+    setIsVerifying(true);
+    try {
+      const response = await fetch("http://localhost:4000/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url }),
+      });
+
+      const data = await response.json();
+
+      // n. Update URL status
+      setUrlStatus({
+        isValid: data.isValid,
+        message: data.message || "",
+      });
+
+      if (data.metadata) {
+        setUrlSuggestions({
+          title: data.metadata.title || "",
+          type: data.metadata.type || "",
+          description: data.metadata.description || "",
+        });
+      }
+    } catch (error) {
+      setUrlStatus({
+        isValid: false,
+        message: "Could not verify URL, but you can still add it",
+      });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // n. Add these handlers for suggestion acceptance
+  const acceptTitleSuggestion = () => {
+    setNewItem((prev) => ({
+      ...prev,
+      title: urlSuggestions.title,
+    }));
+  };
+
+  const acceptTypeSuggestion = () => {
+    setNewItem((prev) => ({
+      ...prev,
+      type: urlSuggestions.type as ContentType,
+    }));
+  };
+
+  const acceptDescriptionSuggestion = () => {
+    setNewItem((prev) => ({
+      ...prev,
+      description: urlSuggestions.description,
+    }));
   };
 
   //n: Add a test controls section that only appears in development
@@ -864,72 +930,143 @@ export default function DashboardContent() {
       </Dialog>
 
       {/* Add Roll Item Dialog */}
-      <Dialog open={isAddingItem} onOpenChange={setIsAddingItem}>
+      <Dialog
+        open={isAddingItem}
+        onOpenChange={(open) => {
+          setIsAddingItem(open);
+          if (!open) {
+            // n. lear suggestions and URL status when dialog closes
+            setUrlSuggestions({ title: "", type: "", description: "" });
+            setUrlStatus({ isValid: true, message: "" });
+            setNewItem({}); // Clear the form
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Resource</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 item-center gap-4">
-              <Label htmlFor="new-title" className="text-right">
-                Title
-              </Label>
-              <Input
-                id="new-title"
-                value={newItem.title || ""}
-                onChange={(e) =>
-                  setNewItem({ ...newItem, title: e.target.value })
-                }
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="new-type" className="text-right">
-                Type
-              </Label>
-              <Select
-                value={newItem.type}
-                onValueChange={(value: ContentType) =>
-                  setNewItem({ ...newItem, type: value })
-                }
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.keys(iconMap).map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* URL Input with verification */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="new-url" className="text-right">
                 URL
               </Label>
-              <Input
-                id="new-url"
-                value={newItem.url || ""}
-                onChange={(e) =>
-                  setNewItem({ ...newItem, url: e.target.value })
-                }
-                className="col-span-3"
-              />
+              <div className="col-span-3">
+                <Input
+                  id="new-url"
+                  value={newItem.url || ""}
+                  onChange={(e) => {
+                    setNewItem({ ...newItem, url: e.target.value });
+                    handleUrlInput(e.target.value);
+                  }}
+                />
+                {isVerifying && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Checking URL...
+                  </p>
+                )}
+                {urlStatus.message && (
+                  <p
+                    className={`text-sm mt-1 ${urlStatus.isValid ? "text-muted-foreground" : "text-yellow-600"}`}
+                  >
+                    {urlStatus.message}
+                  </p>
+                )}
+              </div>
             </div>
+
+            {/* Title with suggestion */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="new-title" className="text-right">
+                Title
+              </Label>
+              <div className="col-span-3 relative">
+                <Input
+                  id="new-title"
+                  value={newItem.title || ""}
+                  onChange={(e) =>
+                    setNewItem({ ...newItem, title: e.target.value })
+                  }
+                />
+                {urlSuggestions.title && (
+                  <div className="absolute right-0 top-0 h-full flex items-center pr-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={acceptTitleSuggestion}
+                      title={urlSuggestions.title} // Show full title on hover
+                      className="truncate max-w-[200px]" // Limit width and add ellipsis
+                    >
+                      {urlSuggestions.title}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Type with suggestion */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="new-type" className="text-right">
+                Type
+              </Label>
+              <div className="col-span-3">
+                <Select
+                  value={newItem.type}
+                  onValueChange={(value: ContentType) =>
+                    setNewItem({ ...newItem, type: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(iconMap).map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {urlSuggestions.type && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Suggested type:
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={acceptTypeSuggestion}
+                    >
+                      {urlSuggestions.type}
+                    </Button>
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Description with suggestion */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="new-description" className="text-right">
                 Description
               </Label>
-              <Textarea
-                id="new-description"
-                value={newItem.description || ""}
-                onChange={(e) =>
-                  setNewItem({ ...newItem, description: e.target.value })
-                }
-                className="col-span-3"
-              />
+              <div className="col-span-3">
+                <Textarea
+                  id="new-description"
+                  value={newItem.description || ""}
+                  onChange={(e) =>
+                    setNewItem({ ...newItem, description: e.target.value })
+                  }
+                />
+                {urlSuggestions.description && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={acceptDescriptionSuggestion}
+                    className="mt-1"
+                  >
+                    Use suggested description
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
           <DialogFooter>
